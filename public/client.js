@@ -19,7 +19,6 @@ var operation = null;
 function calculate(operand1, operand2, operation) {
     var uri = location.origin + "/arithmetic";
 
-    // TODO: Add operator
     switch (operation) {
         case '+':
             uri += "?operation=add";
@@ -34,8 +33,8 @@ function calculate(operand1, operand2, operation) {
             uri += "?operation=divide";
             break;
         case '^':
-            uri += "?pperation=power";
-            breakl;
+            uri += "?operation=power";
+            break;
         default:
             setError();
             return;
@@ -76,21 +75,19 @@ function clearEntryPressed() {
 }
 
 function numberPressed(n) {
-    var value = getValue();
+    var current = getValue();
 
     if (state == states.start || state == states.complete) {
-        value = n;
+        current = n.toString();
         state = (n == '0' ? states.start : states.operand1);
     } else if (state == states.operator) {
-        value = n;
+        current = n.toString();
         state = (n == '0' ? states.operator : states.operand2);
-    } else if (value.replace(/[-\.]/g, '').length < 8) {
-        value += n;
+    } else if (current.replace(/[-\.]/g, '').length < 8) {
+        current += n;
     }
 
-    value += "";
-
-    setValue(value);
+    setValue(current);
 }
 
 function decimalPressed() {
@@ -135,35 +132,62 @@ function equalPressed() {
     calculate(operand1, operand2, operation);
 }
 
-// TODO: Add key press logics
-document.addEventListener('keypress', (event) => {
-    if (event.key.match(/^\d+$/)) {
-        numberPressed(event.key);
-    } else if (event.key == '.') {
+// Keyboard handling: numbers, decimal, operators (^ included), Enter, Backspace, Escape
+document.addEventListener('keydown', (event) => {
+    const k = event.key;
+
+    if (/^\d$/.test(k)) {
+        numberPressed(k);
+        return;
+    }
+
+    if (k === '.') {
         decimalPressed();
-    } else if (event.key.match(/^[-*+/]$/)) {
-        operationPressed(event.key);
-    } else if (event.key == '=') {
+        return;
+    }
+
+    if (/^[\+\-\*\/\^]$/.test(k)) {
+        operationPressed(k);
+        return;
+    }
+
+    if (k === 'Enter') {
         equalPressed();
+        return;
+    }
+
+    if (k === 'Backspace') {
+        clearEntryPressed();
+        return;
+    }
+
+    if (k === 'Escape') {
+        clearPressed();
+        return;
     }
 });
 
 function getValue() {
-    return value;
+    return value === undefined || value === null ? "0" : value.toString();
 }
 
 function setValue(n) {
     value = n;
-    var displayValue = value;
+    var numeric = Number(n);
+    var displayValue;
 
-    if (displayValue > 99999999) {
-        displayValue = displayValue.toExponential(4);
-    } else if (displayValue < -99999999) {
-        displayValue = displayValue.toExponential(4);
-    } else if (displayValue > 0 && displayValue < 0.0000001) {
-        displayValue = displayValue.toExponential(4);
-    } else if (displayValue < 0 && displayValue > -0.0000001) {
-        displayValue = displayValue.toExponential(3);
+    if (n === 'ERROR') {
+        displayValue = 'ERROR';
+    } else if (!isFinite(numeric) || isNaN(numeric)) {
+        displayValue = n.toString();
+    } else {
+        if (numeric > 99999999 || numeric < -99999999 ||
+            (numeric > 0 && numeric < 0.0000001) ||
+            (numeric < 0 && numeric > -0.0000001)) {
+            displayValue = numeric.toExponential(4);
+        } else {
+            displayValue = numeric.toString();
+        }
     }
 
     var chars = displayValue.toString().split("");
