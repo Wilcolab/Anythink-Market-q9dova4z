@@ -184,3 +184,7 @@ BODY {
     background-color: #d5d5d5;
     margin: 4px;
 }
+
+.btn.power {
+    background-color: #f0ad4e;
+}
